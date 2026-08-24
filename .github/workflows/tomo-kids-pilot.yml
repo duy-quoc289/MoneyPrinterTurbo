@@ -12,6 +12,16 @@ on:
       - 'app/services/voice.py'
       - 'app/services/video.py'
       - 'app/services/material.py'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'presets/tomo-kids/**'
+      - '.github/workflows/tomo-kids-pilot.yml'
+      - 'cli.py'
+      - 'app/services/voice.py'
+      - 'app/services/video.py'
+      - 'app/services/material.py'
 
 jobs:
   render-pilot:
