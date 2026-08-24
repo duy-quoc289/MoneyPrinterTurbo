@@ -1,0 +1,61 @@
+name: Tò Mò Kids Pilot
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/tomo-kids-pilot
+    paths:
+      - 'presets/tomo-kids/**'
+      - '.github/workflows/tomo-kids-pilot.yml'
+      - 'cli.py'
+      - 'app/services/voice.py'
+      - 'app/services/video.py'
+      - 'app/services/material.py'
+
+jobs:
+  render-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install FFmpeg and uv
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip uv
+
+      - name: Install project dependencies
+        run: uv sync --frozen
+
+      - name: Render Vietnamese pilot
+        run: bash presets/tomo-kids/run-pilot.sh
+
+      - name: Verify generated media
+        run: |
+          find storage/tasks -type f -maxdepth 3 -print
+          VIDEO="$(find storage/tasks -type f -name '*.mp4' | head -n 1)"
+          test -n "$VIDEO"
+          test -s "$VIDEO"
+          ffprobe -v error -select_streams a:0 -show_entries stream=codec_type -of csv=p=0 "$VIDEO" | grep -q audio
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_type -of csv=p=0 "$VIDEO" | grep -q video
+
+      - name: Upload pilot artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tomo-kids-pilot
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            storage/tasks/**/*.mp4
+            storage/tasks/**/*.mp3
+            storage/tasks/**/*.srt
+            storage/tasks/**/*.json
